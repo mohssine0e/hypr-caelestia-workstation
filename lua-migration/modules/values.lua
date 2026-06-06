@@ -35,6 +35,10 @@ local values = {
     activeWindowBorderColour = "rgba(c6bfffe6)",
     inactiveWindowBorderColour = "rgba(c9c5d055)",
     backgroundColour = "rgb(201f23)",
+    onPrimaryColour = "rgb(2e2960)",
+    primaryD4Colour = "rgba(c6bfffd4)",
+    outlineD4Colour = "rgba(928f9ad4)",
+    secondaryD4Colour = "rgba(c8c3e0d4)",
 
     -- Misc
     volumeStep = 10,
