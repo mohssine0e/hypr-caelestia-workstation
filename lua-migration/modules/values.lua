@@ -34,6 +34,7 @@ local values = {
     windowBorderSize = 1,
     activeWindowBorderColour = "rgba(c6bfffe6)",
     inactiveWindowBorderColour = "rgba(c9c5d055)",
+    backgroundColour = "rgb(201f23)",
 
     -- Misc
     volumeStep = 10,
