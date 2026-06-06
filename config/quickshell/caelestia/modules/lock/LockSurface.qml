@@ -1,0 +1,217 @@
+pragma ComponentBehavior: Bound
+
+import QtQuick
+import QtQuick.Effects
+import Quickshell.Wayland
+import Caelestia.Config
+import qs.components
+import qs.services
+
+WlSessionLockSurface {
+    id: root
+
+    required property WlSessionLock lock
+    required property Pam pam
+
+    readonly property alias unlocking: unlockAnim.running
+
+    contentItem.Config.screen: screen.name
+    contentItem.Tokens.screen: screen.name
+
+    color: "#11111b"
+
+    Connections {
+        function onUnlock(): void {
+            unlockAnim.start();
+        }
+
+        target: root.lock
+    }
+
+    SequentialAnimation {
+        id: unlockAnim
+
+        ParallelAnimation {
+            Anim {
+                target: lockContent
+                properties: "implicitWidth,implicitHeight"
+                to: lockContent.size
+                type: Anim.DefaultSpatial
+            }
+            Anim {
+                target: lockBg
+                property: "radius"
+                to: 0
+            }
+            Anim {
+                target: content
+                property: "scale"
+                to: 0
+                type: Anim.DefaultSpatial
+            }
+            Anim {
+                target: content
+                property: "opacity"
+                to: 0
+                type: Anim.StandardSmall
+            }
+            Anim {
+                target: lockIcon
+                property: "opacity"
+                to: 1
+                type: Anim.StandardLarge
+            }
+            Anim {
+                target: background
+                property: "opacity"
+                to: 0
+                type: Anim.StandardLarge
+            }
+            SequentialAnimation {
+                PauseAnimation {
+                    duration: Tokens.anim.durations.small
+                }
+                Anim {
+                    target: lockContent
+                    property: "opacity"
+                    to: 0
+                }
+            }
+        }
+        PropertyAction {
+            target: root.lock
+            property: "locked"
+            value: false
+        }
+    }
+
+    ParallelAnimation {
+        id: initAnim
+
+        running: true
+
+        Anim {
+            target: background
+            property: "opacity"
+            to: 1
+            type: Anim.StandardLarge
+        }
+        SequentialAnimation {
+            ParallelAnimation {
+                Anim {
+                    target: lockContent
+                    property: "scale"
+                    to: 1
+                    type: Anim.FastSpatial
+                }
+                Anim {
+                    target: lockContent
+                    property: "rotation"
+                    to: 0
+                    duration: Tokens.anim.durations.expressiveFastSpatial
+                    easing: Tokens.anim.standardAccel
+                }
+            }
+            ParallelAnimation {
+                Anim {
+                    target: lockIcon
+                    property: "rotation"
+                    to: 360
+                    easing: Tokens.anim.standardDecel
+                }
+                Anim {
+                    target: lockIcon
+                    property: "opacity"
+                    to: 0
+                }
+                Anim {
+                    target: content
+                    property: "opacity"
+                    to: 1
+                }
+                Anim {
+                    target: content
+                    property: "scale"
+                    to: 1
+                    type: Anim.DefaultSpatial
+                }
+                Anim {
+                    target: lockBg
+                    property: "radius"
+                    to: 0
+                }
+                Anim {
+                    target: lockContent
+                    property: "implicitWidth"
+                    to: lockContent.targetWidth
+                    type: Anim.DefaultSpatial
+                }
+                Anim {
+                    target: lockContent
+                    property: "implicitHeight"
+                    to: lockContent.targetHeight
+                    type: Anim.DefaultSpatial
+                }
+            }
+        }
+    }
+
+    StyledRect {
+        id: background
+
+        anchors.fill: parent
+        color: "#11111b"
+        opacity: 0
+    }
+
+    Item {
+        id: lockContent
+
+        readonly property int size: lockIcon.implicitHeight + Tokens.padding.large * 4
+        readonly property int radius: size / 4 * Tokens.rounding.scale
+        readonly property real targetHeight: root.height
+        readonly property real targetWidth: root.width
+
+        anchors.fill: parent
+
+        rotation: 0
+        scale: 1
+
+        StyledRect {
+            id: lockBg
+
+            anchors.fill: parent
+            color: "transparent"
+            radius: 0
+            opacity: 0
+
+            layer.enabled: false
+            layer.effect: MultiEffect {
+                shadowEnabled: false
+                blurMax: 0
+                shadowColor: "transparent"
+            }
+        }
+
+        MaterialIcon {
+            id: lockIcon
+
+            anchors.centerIn: parent
+            text: "lock"
+            font.pointSize: Tokens.font.size.extraLarge * 4
+            font.bold: true
+            rotation: 180
+        }
+
+        Content {
+            id: content
+
+            anchors.fill: parent
+            anchors.margins: Tokens.padding.large * 2
+
+            lock: root
+            opacity: 0
+            scale: 0
+        }
+    }
+}

@@ -1,0 +1,893 @@
+AI HANDOFF: MOHSSINE HYPRLAND + CAELESTIA + QUICKSHELL SETUP
+Generated: 2026-05-18
+
+This file describes the current desktop setup, its goals, architecture, important files,
+dashboard tabs, productivity workflow, and what another AI should understand before
+suggesting changes.
+
+
+1. USER AND DEVICE CONTEXT
+==========================
+
+User:
+- Student / engineering-focused workflow.
+- Uses laptop for coding, studying, browser work, media, notes, tasks, and focus sessions.
+- Wants a beautiful but practical Hyprland environment.
+- Priorities are productivity, simplicity, keyboard workflow, battery life, privacy, and stability.
+
+Laptop:
+- HP EliteBook 840 G7
+- Intel i5 10th gen
+- Intel UHD 630 integrated GPU
+- 16 GB RAM
+- 500 GB SSD
+- Arch Linux
+- GNOME is still kept as fallback and must not be broken.
+- Hyprland + Caelestia shell is the current daily environment.
+
+Design goals:
+- Productivity > eye candy.
+- Minimal, professional, dark, Catppuccin-like style.
+- Battery-friendly.
+- Not bloated.
+- No Notion-like complexity.
+- No always-refreshing widgets unless needed.
+- The system should help with studying, coding, deep work, and low distraction daily execution.
+
+Important philosophy:
+- Dashboard should show useful daily information, not become a full management app.
+- Deep controls belong in dedicated tabs.
+- Main surfaces should stay calm.
+- Heavy network/background services should be manual or disabled by default.
+- Privacy matters: no unnecessary background geolocation, no image clipboard history, no noisy sync.
+
+
+2. HIGH LEVEL ARCHITECTURE
+==========================
+
+This setup is based on:
+- Hyprland for the Wayland compositor/window manager.
+- Quickshell + Caelestia for bar, launcher, dashboard, notifications, lock UI, widgets, and services.
+- QML for UI modules.
+- Local JSON / Quickshell state for lightweight persistence.
+
+Important config roots:
+
+Hyprland main config:
+- /home/mohssine/.config/hypr/hyprland.conf
+
+Hyprland modules:
+- /home/mohssine/.config/hypr/hyprland/keybinds.conf
+- /home/mohssine/.config/hypr/hyprland/execs.conf
+- /home/mohssine/.config/hypr/hyprland/rules.conf
+- /home/mohssine/.config/hypr/hyprland/input.conf
+- /home/mohssine/.config/hypr/hyprland/gestures.conf
+- /home/mohssine/.config/hypr/hyprland/general.conf
+- /home/mohssine/.config/hypr/hyprland/decoration.conf
+- /home/mohssine/.config/hypr/hyprland/animations.conf
+
+User override config:
+- /home/mohssine/.config/caelestia/hypr-user.conf
+- /home/mohssine/.config/caelestia/hypr-vars.conf
+- /home/mohssine/.config/caelestia/shell.json
+
+Quickshell/Caelestia modules:
+- /home/mohssine/.config/quickshell/caelestia/modules/
+- /home/mohssine/.config/quickshell/caelestia/services/
+
+Dashboard tabs are wired in:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Content.qml
+
+Dashboard tab bar UI:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Tabs.qml
+
+Persistent local state:
+- /home/mohssine/.local/state/caelestia/todos.json
+- /home/mohssine/.local/state/caelestia/calendar-events.json
+- /home/mohssine/.local/state/caelestia/notifs.json
+- /home/mohssine/.local/state/caelestia/scheme.json
+
+
+3. CURRENT DASHBOARD TABS
+=========================
+
+Current top dashboard tabs:
+
+1. Dashboard
+2. Media
+3. Performance
+4. Timebox
+5. Today Plan
+6. Todos
+7. Weather
+
+Defined in:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Content.qml
+
+Relevant code shape:
+
+    readonly property var dashboardTabs: {
+        const allTabs = [
+            { component: dashComponent, iconName: "dashboard", text: qsTr("Dashboard"), ... },
+            { component: mediaComponent, iconName: "queue_music", text: qsTr("Media"), ... },
+            { component: performanceComponent, iconName: "speed", text: qsTr("Performance"), ... },
+            { component: pomodoroComponent, iconName: "timer", text: qsTr("Timebox"), enabled: true },
+            { component: todayPlanComponent, iconName: "today", text: qsTr("Today Plan"), enabled: true },
+            { component: todoComponent, iconName: "checklist", text: qsTr("Todos"), enabled: true },
+            { component: weatherComponent, iconName: "cloud", text: qsTr("Weather"), ... }
+        ];
+        return allTabs.filter(tab => tab.enabled);
+    }
+
+The dashboard uses horizontal flick/swipe navigation and a tab bar. Current tab state is stored in
+DashboardState through the dashboard wrapper.
+
+
+4. DASHBOARD TAB DETAILS
+========================
+
+4.1 Dashboard Tab
+-----------------
+
+Main file:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Dash.qml
+
+Important child components:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/dash/Calendar.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/dash/DateTime.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/dash/Media.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/dash/Resources.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/dash/User.qml
+
+Current role:
+- General overview / home tab.
+- Has clock/date and calendar.
+- Weather mini box was removed to avoid duplicate info because Weather has its own tab.
+- CPU mini resource lines were removed from dashboard because Performance has its own tab.
+- Calendar can mark events on days.
+- Event dots appear under calendar days. Number of dots represents number of events, using different colors.
+- Hovering a day with events shows a small preview.
+- Clicking a day opens a small event editor.
+
+Calendar event persistence:
+- Service file:
+  /home/mohssine/.config/quickshell/caelestia/services/CalendarEvents.qml
+- Storage file:
+  /home/mohssine/.local/state/caelestia/calendar-events.json
+
+Current CalendarEvents service behavior:
+- Events are keyed by date: YYYY-MM-DD.
+- Events are stored as local JSON.
+- addEvent(date, title) adds an event.
+- removeEvent(date, index) removes one event.
+- listFor(date) returns events.
+- hasEvents(date) returns whether a day has events.
+
+Important code shape:
+
+    readonly property string storagePath: `${Paths.state}/calendar-events.json`
+
+    function addEvent(date, title) {
+        const dateKey = key(date);
+        const nextEvents = JSON.parse(JSON.stringify(events));
+        if (!nextEvents[dateKey])
+            nextEvents[dateKey] = [];
+        nextEvents[dateKey].push({ title: cleanTitle, createdAt: Date.now() });
+        events = nextEvents;
+        save();
+    }
+
+    function save() {
+        storage.setText(JSON.stringify(events));
+    }
+
+Local calendar events are intentionally lightweight. They are not Google Calendar.
+
+Why not Google Calendar by default:
+- Needs auth/token storage.
+- Adds network sync and failure cases.
+- Heavier and less private.
+- Could be added later as optional manual sync, but local JSON is better for now.
+
+
+4.2 Media Tab
+-------------
+
+Files:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Media.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/MediaWrapper.qml
+- /home/mohssine/.config/quickshell/caelestia/services/Players.qml
+- /home/mohssine/.config/quickshell/caelestia/services/LyricsService.qml
+
+Role:
+- Shows active media/player information.
+- Provides controls like play/pause/next/previous.
+- Can show lyrics if enabled.
+
+Current config:
+- showLyrics is true in /home/mohssine/.config/caelestia/shell.json
+
+Resource impact:
+- Light when idle.
+- Medium when lyrics are active or network lyrics are fetched.
+- Media progress timers run while media is playing.
+
+Suggestions:
+- Keep lyrics off or manual if battery matters.
+- Avoid live animated visualizers.
+- Keep media controls minimal.
+
+
+4.3 Performance Tab
+-------------------
+
+Files:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Performance.qml
+- /home/mohssine/.config/quickshell/caelestia/services/SystemUsage.qml
+- /home/mohssine/.config/quickshell/caelestia/services/NetworkUsage.qml
+
+Role:
+- Shows CPU, memory, storage, battery, network, GPU if enabled.
+
+Current shell.json has:
+
+    "dashboard": {
+        "performance": {
+            "showCpu": true
+        },
+        "showWeather": true
+    }
+
+Because only showCpu is explicitly present in shell.json, defaults may still enable other widgets depending on Caelestia defaults.
+
+Resource impact:
+- This is the heaviest dashboard tab.
+- SystemUsage polls /proc/stat, /proc/meminfo, lsblk, sensors, GPU usage.
+- NetworkUsage polls /proc/net/dev.
+- Polling interval is GlobalConfig.dashboard.resourceUpdateInterval.
+
+Important code:
+
+    Timer {
+        running: root.refCount > 0
+        interval: GlobalConfig.dashboard.resourceUpdateInterval
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            stat.reload();
+            meminfo.reload();
+            storage.running = true;
+            gpuUsage.running = true;
+            sensors.running = true;
+        }
+    }
+
+Optimization suggestions:
+- Increase resourceUpdateInterval to 3000-5000 ms.
+- Disable GPU, storage, network if not needed.
+- Keep battery and CPU, maybe memory.
+- Avoid showing Performance as a constantly open tab on battery.
+
+
+4.4 Timebox Tab
+---------------
+
+Formerly called Focus/Pomodoro.
+
+Files:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/PomodoroTab.qml
+- /home/mohssine/.config/quickshell/caelestia/services/PomodoroTimer.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/PomodoroOverlay.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/bar/popouts/Pomodoro.qml
+
+Tab label:
+- Timebox
+
+Why "Timebox":
+- It covers Pomodoro, custom countdown timer, and stopwatch.
+- It feels productivity-focused without being too technical.
+- It suggests controlled work sessions.
+
+Current modes inside Timebox:
+
+1. Pomodoro
+   - Focus session.
+   - Short break.
+   - Long break.
+   - Start/pause.
+   - Skip.
+   - Reset.
+   - Reset rounds.
+   - +5 min.
+   - Notifications/sound when finished.
+   - Floating overlay.
+
+2. Timer
+   - Custom label.
+   - Custom duration input.
+   - Accepts minutes, mm:ss, or hh:mm:ss.
+   - Start/pause.
+   - Reset.
+   - +1 min.
+   - +5 min.
+   - Notification/sound when finished.
+   - Floating overlay.
+
+3. Stopwatch
+   - Start.
+   - Pause/resume.
+   - Reset.
+   - Persists state.
+   - Uses same floating overlay.
+
+Floating overlay:
+- File:
+  /home/mohssine/.config/quickshell/caelestia/modules/PomodoroOverlay.qml
+- Minimal draggable window.
+- Shows active title, mode, time.
+- Buttons: pause/resume, reset, hide.
+- Position persists.
+- Works for Pomodoro, Timer, Stopwatch.
+
+Service persistence:
+- PomodoroTimer uses PersistentProperties with reloadableId "focusState".
+- Persists active tool, mode, timer duration/remaining, stopwatch elapsed/running, rounds, overlay hidden state.
+
+Resource impact:
+- Very light.
+- One 1000 ms timer only runs while Pomodoro/Timer/Stopwatch is active.
+- Good for battery.
+
+Important code shape:
+
+    readonly property bool activeRunning:
+        activeTool === "stopwatch" ? stopwatchRunning :
+        activeTool === "timer" ? timerRunning :
+        running
+
+    Timer {
+        interval: 1000
+        running: root.running || root.timerRunning || root.stopwatchRunning
+        repeat: true
+        onTriggered: root.tickOneSecond()
+    }
+
+
+4.5 Today Plan Tab
+------------------
+
+File:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/TodayPlanTab.qml
+
+Role:
+- A lightweight read-only daily overview.
+- Shows today's calendar events.
+- Shows unfinished todos, up to 8 items.
+- Has a refresh button for todos.
+- Does not create a new task database.
+
+Data sources:
+- Today calendar events come from CalendarEvents.listFor(new Date()).
+- Todos come from:
+  /home/mohssine/.local/state/caelestia/todos.json
+
+Current philosophy:
+- "What do I need to do today?"
+- Quiet summary, not another project manager.
+- Editing stays in Dashboard calendar and Todos tab.
+
+Important code shape:
+
+    readonly property var todayEvents: CalendarEvents.listFor(new Date())
+    readonly property var activeTodos: todos.filter(todo => !todo.done).slice(0, 8)
+
+Resource impact:
+- Very light.
+- Reads todos JSON.
+- No network.
+- No polling except when reloaded/refreshed.
+
+Possible improvements:
+- Add "show only today" if Todo tasks later get dates.
+- Add a small "start Timebox" action per task, but be careful not to clutter the tab.
+- Add a compact "top 3 priorities" area only if priorities return.
+
+
+4.6 Todos Tab
+-------------
+
+File:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/TodoTab.qml
+
+Storage:
+- /home/mohssine/.local/state/caelestia/todos.json
+
+Current philosophy:
+- Calm execution surface.
+- Not a project management app.
+- Workflow: Capture -> break into subtasks if needed -> complete.
+- No categories.
+- No priority.
+- No notes.
+- No Today/Tomorrow/Later buckets.
+- No tags.
+
+Two inferred task types:
+
+1. Simple task
+   - Has no subtasks.
+   - Checkbox completes/uncompletes directly.
+   - Row stays minimal.
+
+2. Big task
+   - Has one or more subtasks.
+   - Parent represents the goal/container.
+   - Subtasks are the real actionable steps.
+   - Parent completion is calculated automatically from subtasks.
+   - Parent checkbox does NOT mark all subtasks complete.
+   - Parent checkbox expands/collapses instead, to prevent accidental completion.
+   - Progress bar shows subtask completion.
+
+Current important behavior:
+- Incomplete tasks stay above completed tasks.
+- Subtasks also sort incomplete first.
+- Only one task expands at a time.
+- Expanded mode shows edit/delete and subtask management.
+- Collapsed rows stay visually calm.
+
+Important code shape:
+
+    function syncTodo(todo) {
+        const subtasks = sanitizeSubtasks(todo?.subtasks);
+        const hasSubtasks = subtasks.length > 0;
+        const done = hasSubtasks ? subtasks.every(subtask => subtask.done) : !!todo?.done;
+        return { todoId, task, done, expanded, createdAt, subtasks };
+    }
+
+    function toggleTodo(index) {
+        const todoSubtasks = sanitizeSubtasks(todo.subtasks);
+        if (todoSubtasks.length > 0) {
+            setExpandedExclusive(index, !todo.expanded);
+            return;
+        }
+        patchTodo(index, { done: !todo.done });
+    }
+
+Resource impact:
+- Light.
+- Uses local JSON.
+- Saves after changes with a short debounce timer.
+- No network.
+
+Potential suggestions:
+- Keep it simple.
+- Do not re-add priorities/notes/categories unless absolutely necessary.
+- If a new AI suggests many tags or scheduling systems, that conflicts with the current design.
+
+
+4.7 Weather Tab
+---------------
+
+Files:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/WeatherTab.qml
+- /home/mohssine/.config/quickshell/caelestia/services/Weather.qml
+
+Role:
+- Weather screen with location input.
+- Manual Sync button.
+- Approx location button.
+- Shows current weather, details, sunrise/sunset, 7-day forecast.
+
+Current location:
+- In shell.json:
+  "weatherLocation": "al hoceima"
+
+Current behavior:
+- It is manual-sync oriented.
+- It does not constantly fetch in background by default.
+- Approx location uses an IP-based service, not GPS. It can be wrong.
+
+Network services used:
+- ipinfo.io for approximate location.
+- Nominatim/OpenStreetMap for city lookup.
+- Open-Meteo for weather.
+
+Resource impact:
+- Light when idle.
+- Network only when syncing/using current location.
+
+Privacy notes:
+- Approx location can reveal IP-derived location and can be inaccurate.
+- For privacy, prefer manual city input.
+
+Potential suggestions:
+- Keep Weather manual.
+- Do not add auto-refresh unless interval is long, e.g. every 2-6 hours.
+- Do not add live geolocation unless user explicitly wants it.
+
+
+5. TOP BAR / SHELL BEHAVIOR
+===========================
+
+The top/side bar comes from Caelestia/Quickshell.
+
+Current shell.json relevant values:
+
+    "bar": {
+        "persistent": false,
+        "showOnHover": true,
+        "status": {
+            "showAudio": false,
+            "showKbLayout": true,
+            "showLockStatus": true,
+            "showMicrophone": false
+        }
+    }
+
+Meaning:
+- Bar appears on hover rather than always persistent.
+- Keyboard layout indicator is shown.
+- Audio/microphone status icons are disabled to reduce clutter.
+- Lock status is shown.
+
+Launcher:
+- Super key opens launcher.
+- Launcher showOnHover is enabled.
+
+Hidden launcher apps:
+- thunar
+- thunar-bulk-rename
+- thunar-settings
+
+Reason:
+- User wanted to keep his old file manager, not Thunar.
+
+
+6. KEYBINDS AND WORKFLOW
+========================
+
+Main keybind file:
+- /home/mohssine/.config/hypr/hyprland/keybinds.conf
+
+Important bindings:
+
+Launcher:
+- Super -> Caelestia launcher.
+
+Lock/session:
+- configured through $kbLock -> caelestia:lock
+
+Media:
+- Super + End -> media play/pause
+- Ctrl + Super + Space -> media play/pause
+- XF86 media keys also work.
+
+Window management:
+- Super + arrows -> move focus
+- Super + Shift + arrows -> move window
+- Super + Minus / Equal -> resize width
+- Super + Shift + Minus / Equal -> resize height
+- Super + mouse left -> move window
+- Super + mouse right -> resize window
+- Ctrl + Super + Backslash -> center window
+- Ctrl + Super + Alt + Backslash -> resize active to exact 55% x 70% and center
+- configured fullscreen binding -> fullscreen
+- floating toggle binding -> toggle floating
+
+Screenshots:
+- Print -> full screen screenshot via caelestia screenshot
+- Super + Shift + S -> region screenshot directly to clipboard, no preview
+  Command:
+  hyprshot -m region --clipboard-only -z -s
+- Super + Shift + Alt + S -> Caelestia region screenshot UI
+
+Clipboard:
+- Super + V -> clipboard history picker
+- Super + Alt + V -> clipboard delete/manage mode
+- Ctrl + Shift + Alt + V -> paste latest cliphist item using ydotool
+
+Clipboard history startup:
+- /home/mohssine/.config/hypr/hyprland/execs.conf
+- /home/mohssine/.config/hypr/scripts/cliphist-text-only.sh
+
+Current clipboard philosophy:
+- Text clipboard history is enabled.
+- Image clipboard history is disabled so screenshots do not clutter Super+V.
+- This is better for privacy and usability.
+
+
+7. HYPRLAND RULES AND DIALOGS
+=============================
+
+Window rules:
+- /home/mohssine/.config/hypr/hyprland/rules.conf
+
+Dialog behavior:
+- File pickers, Save As, properties, auth/error/helper windows are floated and centered.
+- This was added because some VS Code/GitHub/auth/error windows appeared top-left.
+- Important: only valid Hyprland rule types are used. Invalid maxsize rules were removed.
+
+Examples of rules:
+
+    windowrule = float true, match:title Save As
+    windowrule = center 1, match:title Save As
+
+Small auth/error helper rules:
+- Match titles like Authentication Required, Sign In, Error, Warning, GitHub Authentication.
+- Match classes like pinentry/polkit.
+
+Do not re-add invalid rules like:
+- windowrule = maxsize ...
+
+Hyprland 0.55 rejected that earlier.
+
+
+8. LOCK SCREEN
+==============
+
+Lock screen files:
+- /home/mohssine/.config/quickshell/caelestia/modules/lock/LockSurface.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/lock/Content.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/lock/Resources.qml
+
+Current lock goals:
+- Simple, clean full-screen layout.
+- No visible desktop behind the lock screen.
+- No dinosaur game.
+- No weather box.
+- Music control appears only when useful.
+- Performance circles are used instead of lines.
+- Battery percentage and keyboard layout indicator exist or were requested.
+- Fingerprint auth is enabled in shell.json:
+  "enableFprint": true
+
+Security/privacy:
+- The lock screen should not expose background windows.
+- session_lock_xray should stay false if relevant.
+- Notifications are hidden on lock:
+  "hideNotifs": true
+
+
+9. POWER AND BATTERY
+====================
+
+Power priorities:
+- Laptop battery life matters.
+- Avoid heavy polling and background services.
+- Avoid location services unless needed.
+- Avoid visualizer/animations that run all the time.
+
+System power:
+- power-profiles-daemon is used.
+- There is low-battery system config:
+  /home/mohssine/.config/caelestia/system-config/90-low-battery-safe.conf
+- There is an apply script:
+  /home/mohssine/.config/caelestia/system-config/apply-system-fixes.sh
+
+Background services in execs.conf:
+- gnome-keyring-daemon
+- polkit-gnome auth agent
+- cliphist text-only watcher
+- trash-empty 30
+- cursor gsettings
+- mpris-proxy
+- caelestia resizer daemon
+- caelestia shell
+
+Disabled for privacy/battery:
+- Geoclue background agent
+- gammastep automatic location night light
+- image clipboard history
+
+Potential battery optimizations:
+- Performance tab update interval to 3000-5000 ms.
+- Disable GPU/storage/network Performance cards if not needed.
+- Keep Weather manual sync.
+- Keep background geolocation disabled.
+- Keep visualizer disabled.
+- Keep clipboard image history disabled.
+- Avoid adding live news/email/weather refresh widgets.
+
+
+10. PRIVACY AND SECURITY DEFAULTS
+=================================
+
+Good current privacy choices:
+- Clipboard image history disabled.
+- Weather does not auto-sync constantly.
+- Background geolocation disabled.
+- Lock notifications hidden.
+- Lock screen should not reveal desktop.
+- Google Calendar not connected yet.
+- Local JSON used for todos/events instead of cloud sync.
+
+Privacy risks to avoid:
+- Persistent clipboard history can store passwords/tokens. Current setup stores text history, so user should still be careful.
+- Google Calendar requires token storage.
+- Approx location uses IP-based web service and can be wrong.
+- Lyrics fetches can make network requests.
+- Weather sync makes external web requests.
+
+
+11. RESOURCE COST SUMMARY
+=========================
+
+Very light:
+- Todos
+- Today Plan
+- Timebox when idle
+- Calendar local events
+- Clipboard text watcher
+
+Light:
+- Weather when idle
+- Media when no lyrics/network fetching
+
+Medium:
+- Timebox while timer/stopwatch is running: 1-second timer, still acceptable.
+- Media while playing: progress timers.
+
+Heaviest:
+- Performance tab because of polling /proc, sensors, lsblk, GPU, network.
+- LyricsService if it fetches online lyrics.
+
+Observed process examples from a live check:
+- qs / Quickshell can use noticeable CPU/RAM depending on active UI and effects.
+- Hyprland is normal compositor cost.
+- NetworkManager, pipewire, wireplumber, power-profiles-daemon are expected.
+- wl-paste text watcher is tiny.
+
+
+12. WHAT IS SAFE TO CHANGE
+==========================
+
+Good changes:
+- Visual spacing/typography refinements.
+- Better Today Plan layout.
+- Better Timebox labels or controls.
+- Better small dialog/window rules if based on exact title/class.
+- Increase performance polling interval.
+- Turn off heavy cards in Performance.
+- Improve local JSON persistence.
+- Add manual import/export for calendar/todos.
+
+Risky changes:
+- Adding Google Calendar background sync.
+- Adding automatic weather/location refresh.
+- Adding many tags/categories/priorities to Todos.
+- Adding full project-management behavior.
+- Adding always-visible widgets with timers.
+- Adding animations/effects that run continuously.
+- Changing GNOME settings in a way that breaks GNOME fallback.
+
+
+13. FUTURE FEATURE IDEAS
+========================
+
+Recommended possible additions:
+
+1. Today Plan improvements
+- Show top 3 tasks.
+- Show today calendar events.
+- Optional "Start Timebox" button for a selected task.
+- Optional quick note for today's plan.
+- Keep it read-only or very minimal.
+
+2. Quick Notes tab
+- One local scratchpad.
+- No folders, no markdown database, no sync.
+- Useful for temporary thoughts.
+
+3. Study Plan tab
+- Weekly subjects/modules.
+- Lightweight progress, not full planner.
+- Could be merged with Today Plan if not needed separately.
+
+4. System tab
+- Quick controls for Wi-Fi, Bluetooth, location, services.
+- Must be lazy/manual, not heavy polling.
+
+5. Manual backup/export
+- Export todos/calendar-events/shell config to a tar file.
+- Good before updates.
+
+Features to avoid:
+- Email tab.
+- Chat/social tabs.
+- News feed.
+- Always-refreshing calendar/weather.
+- Full Notion-style task database.
+- Cloud sync by default.
+
+
+14. CURRENT NAMING
+==================
+
+Preferred names:
+- "Timebox" for Pomodoro/Timer/Stopwatch.
+- "Today Plan" for daily overview.
+- "Todos" for task execution list.
+- "Dashboard" for general overview.
+
+Reasoning:
+- "Focus" was good but broad.
+- "Timebox" better describes sessions/tools.
+- "Today Plan" is clear for what the user has to do today.
+
+
+15. IMPORTANT CURRENT FILES FOR AN AI TO READ BEFORE EDITING
+============================================================
+
+Dashboard structure:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Content.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Tabs.qml
+
+Timebox:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/PomodoroTab.qml
+- /home/mohssine/.config/quickshell/caelestia/services/PomodoroTimer.qml
+- /home/mohssine/.config/quickshell/caelestia/modules/PomodoroOverlay.qml
+
+Today Plan:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/TodayPlanTab.qml
+
+Todos:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/TodoTab.qml
+- /home/mohssine/.local/state/caelestia/todos.json
+
+Calendar:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/dash/Calendar.qml
+- /home/mohssine/.config/quickshell/caelestia/services/CalendarEvents.qml
+- /home/mohssine/.local/state/caelestia/calendar-events.json
+
+Weather:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/WeatherTab.qml
+- /home/mohssine/.config/quickshell/caelestia/services/Weather.qml
+
+Performance:
+- /home/mohssine/.config/quickshell/caelestia/modules/dashboard/Performance.qml
+- /home/mohssine/.config/quickshell/caelestia/services/SystemUsage.qml
+- /home/mohssine/.config/quickshell/caelestia/services/NetworkUsage.qml
+
+Hyprland:
+- /home/mohssine/.config/hypr/hyprland/keybinds.conf
+- /home/mohssine/.config/hypr/hyprland/execs.conf
+- /home/mohssine/.config/hypr/hyprland/rules.conf
+- /home/mohssine/.config/hypr/hyprland/input.conf
+- /home/mohssine/.config/caelestia/hypr-vars.conf
+- /home/mohssine/.config/caelestia/hypr-user.conf
+
+Main shell config:
+- /home/mohssine/.config/caelestia/shell.json
+
+
+16. RULES FOR ANOTHER AI
+========================
+
+Please follow these rules:
+
+- Preserve the existing Caelestia/Quickshell architecture.
+- Do not redesign the whole shell.
+- Keep changes small and local.
+- Do not add heavy background daemons.
+- Do not add cloud sync unless explicitly requested.
+- Do not break GNOME fallback.
+- Do not make Todos complex.
+- Prefer local JSON persistence.
+- Prefer manual sync over automatic network sync.
+- Test QML reload after edits:
+  qs -c caelestia kill
+  caelestia shell -d
+  qs log -c caelestia --tail 250
+- Test Hyprland config after edits:
+  hyprctl reload
+  hyprctl configerrors
+
+The setup should continue to feel:
+- clean
+- fast
+- useful
+- battery-conscious
+- keyboard-friendly
+- focused on studying/coding
+- visually polished but not bloated
+

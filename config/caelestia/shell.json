@@ -1,0 +1,87 @@
+{
+    "appearance": {
+        "font": {
+            "size": {
+                "scale": 0.9264565471551052
+            }
+        },
+        "padding": {
+            "scale": 0.8414496867658574
+        },
+        "rounding": {
+            "scale": 0.23231348645752145
+        },
+        "spacing": {
+            "scale": 0.43721806800467644
+        }
+    },
+    "bar": {
+        "entries": [
+            {
+                "enabled": true,
+                "id": "logo"
+            },
+            {
+                "enabled": true,
+                "id": "workspaces"
+            },
+            {
+                "enabled": true,
+                "id": "spacer"
+            },
+            {
+                "enabled": true,
+                "id": "workspaceApps"
+            },
+            {
+                "enabled": true,
+                "id": "spacer"
+            },
+            {
+                "enabled": true,
+                "id": "tray"
+            },
+            {
+                "enabled": true,
+                "id": "clock"
+            },
+            {
+                "enabled": true,
+                "id": "statusIcons"
+            },
+            {
+                "enabled": true,
+                "id": "power"
+            }
+        ],
+        "persistent": false,
+        "showOnHover": true,
+        "status": {
+            "showAudio": false,
+            "showKbLayout": true,
+            "showLockStatus": true,
+            "showMicrophone": true
+        },
+        "workspaces": {
+            "activeIndicator": true,
+            "maxWindowIcons": 0,
+            "occupiedBg": false,
+            "showWindows": true,
+            "shown": 8
+        }
+    },
+    "border": {
+        "rounding": 0,
+        "thickness": 0
+    },
+    "launcher": {
+        "showOnHover": false
+    },
+    "lock": {
+        "hideNotifs": true
+    },
+    "services": {
+        "lyricsBackend": "Auto",
+        "showLyrics": true
+    }
+}

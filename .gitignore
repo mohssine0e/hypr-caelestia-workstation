@@ -1,0 +1,34 @@
+# Runtime/cache/state
+**/.cache/
+**/cache/
+**/state/
+**/*.log
+**/*.pid
+
+# Heavy/private media
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.mp4
+*.mkv
+*.webm
+
+# Backups and temporary files
+**/backups/
+**/*.bak
+**/*~
+**/.DS_Store
+
+# Secrets / tokens / credentials
+**/secrets*
+**/*secret*
+**/*token*
+**/*password*
+**/*credential*
+**/*.pem
+**/*.p12
+**/*.pfx
+**/id_rsa
+**/id_ed25519
+**/known_hosts
